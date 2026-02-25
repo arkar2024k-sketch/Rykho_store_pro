@@ -9,70 +9,87 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <style>
-        :root { --main: #00d2ff; --bg: #0b141a; --card: #1e272e; }
-        body { font-family: 'Segoe UI', sans-serif; margin: 0; background: var(--bg); color: white; padding-bottom: 80px; }
+        :root { --main: #00d2ff; --bg: #0b141a; --card: #1e272e; --admin: #e74c3c; }
+        body { font-family: 'Segoe UI', sans-serif; margin: 0; background: var(--bg); color: white; padding-bottom: 80px; overflow-x: hidden; }
         .header { display: flex; justify-content: space-between; padding: 15px; background: #151d24; align-items: center; position: sticky; top: 0; z-index: 100; border-bottom: 2px solid var(--main); }
         .page { display: none; padding: 15px; animation: fadeIn 0.3s; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         .page.active { display: block; }
         .wallet-card { background: linear-gradient(135deg, #00d2ff, #3a7bd5); padding: 25px; border-radius: 20px; text-align: center; margin-bottom: 20px; box-shadow: 0 8px 15px rgba(0,210,255,0.3); }
-        .balance { font-size: 35px; font-weight: bold; margin: 10px 0; letter-spacing: 1px; }
-        .game-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
-        .game-item { background: var(--card); padding: 10px; border-radius: 15px; text-align: center; border: 1px solid #333; }
-        .game-item img { width: 100%; border-radius: 10px; }
-        .history-card { background: var(--card); padding: 15px; border-radius: 12px; margin-bottom: 12px; border-left: 5px solid var(--main); }
-        .status-done { color: #2ecc71; font-weight: bold; }
-        .bottom-nav { position: fixed; bottom: 0; width: 100%; background: #151d24; display: flex; justify-content: space-around; padding: 15px 0; border-top: 1px solid #333; }
-        .nav-item { color: #888; text-decoration: none; font-size: 11px; text-align: center; cursor: pointer; transition: 0.3s; }
-        .nav-item.active { color: var(--main); transform: translateY(-5px); }
-        .nav-item i { font-size: 22px; display: block; margin-bottom: 5px; }
-        .btn { width: 100%; padding: 12px; border-radius: 12px; border: none; font-weight: bold; cursor: pointer; }
+        .balance { font-size: 32px; font-weight: bold; margin: 5px 0; }
+        .game-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; }
+        .game-item { background: var(--card); border-radius: 15px; overflow: hidden; border: 1px solid #333; transition: 0.3s; }
+        .game-item img { width: 100%; height: 120px; object-fit: cover; }
+        .game-info { padding: 10px; text-align: center; }
+        .btn { width: 100%; padding: 12px; border-radius: 12px; border: none; font-weight: bold; cursor: pointer; transition: 0.3s; }
         .btn-main { background: var(--main); color: #000; }
-        .btn-logout { background: #ff4757; color: white; margin-top: 20px; }
+        .btn-admin { background: var(--admin); color: white; margin-top: 10px; }
+        .bottom-nav { position: fixed; bottom: 0; width: 100%; background: #151d24; display: flex; justify-content: space-around; padding: 12px 0; border-top: 1px solid #333; z-index: 1000; }
+        .nav-item { color: #888; text-decoration: none; font-size: 11px; text-align: center; cursor: pointer; }
+        .nav-item.active { color: var(--main); }
+        .nav-item i { font-size: 20px; display: block; margin-bottom: 3px; }
+        .admin-section { background: rgba(231, 76, 60, 0.1); border: 1px solid var(--admin); padding: 15px; border-radius: 15px; margin-top: 20px; display: none; }
+        input { width: 90%; padding: 10px; margin: 10px 0; border-radius: 8px; border: 1px solid #444; background: #151d24; color: white; }
     </style>
 </head>
 <body>
 
     <div class="header">
-        <div id="userHeader"><button onclick="login()" style="background:var(--main); border:none; padding:8px 15px; border-radius:8px;">Login</button></div>
+        <div id="userHeader"><button onclick="login()" class="btn-main" style="padding: 5px 15px;">Login</button></div>
         <div style="font-weight: 900; color: var(--main); font-size: 18px;">RYKHO STORE</div>
+        <div id="adminBadge" style="display:none; color:var(--admin); font-size: 12px;"><i class="fas fa-user-shield"></i> Admin</div>
     </div>
 
     <div id="home" class="page active">
         <div class="wallet-card">
-            <div style="font-size: 14px; opacity: 0.9;">Wallet Balance</div>
+            <div style="font-size: 13px; opacity: 0.9;">Available Balance</div>
             <div class="balance" id="userBalance">0 MMK</div>
-            <div id="userName" style="font-size: 12px; opacity: 0.8;">ဧည့်သည် (Please Login)</div>
+            <div id="userName" style="font-size: 12px;">Welcome, Guest</div>
         </div>
         
-        <h3 style="margin-top:25px;">Popular Games</h3>
+        <h3 style="margin: 20px 0 15px 0;"><i class="fas fa-fire" style="color:#ff4757"></i> Hot Games</h3>
         <div class="game-grid">
-            <div class="game-item" onclick="alert('ငွေဖြည့်သွင်းပြီးမှ ဝယ်ယူနိုင်ပါမည်')">
+            <div class="game-item" onclick="buyGame('MLBB')">
                 <img src="https://m.mobilelegends.com/static/images/index/logo.png">
-                <div style="font-size: 11px; margin-top: 5px;">MLBB</div>
+                <div class="game-info"><div>MLBB</div><small style="color:var(--main)">Instant-Topup</small></div>
             </div>
-            <div class="game-item" onclick="alert('Coming Soon')">
-                <img src="https://static-g.pubgmobile.com/m/common/images/icon_logo.png" style="background:#eee">
-                <div style="font-size: 11px; margin-top: 5px;">PUBG</div>
+            <div class="game-item" onclick="buyGame('Free Fire')">
+                <img src="https://img.tapimg.net/market/l_icon/9417869389f464062149e89d5351336c_360.png?imageView2/2/w/360/q/80/format/jpg/interlace/1/ignore-error/1">
+                <div class="game-info"><div>Free Fire</div><small style="color:var(--main)">UID-Only</small></div>
+            </div>
+            <div class="game-item" onclick="buyGame('PUBG')">
+                <img src="https://static-g.pubgmobile.com/m/common/images/icon_logo.png" style="background:#fff">
+                <div class="game-info"><div>PUBG</div><small style="color:var(--main)">Global-UC</small></div>
             </div>
         </div>
     </div>
 
     <div id="history" class="page">
-        <h3>ဝယ်ယူမှုမှတ်တမ်း (Order History)</h3>
-        <div id="historyList">မှတ်တမ်းမရှိသေးပါ။</div>
+        <h3><i class="fas fa-history"></i> Order History</h3>
+        <div id="historyList" style="color:#888; text-align:center; margin-top:50px;">No orders yet.</div>
     </div>
 
     <div id="profile" class="page">
-        <h3>ကျွန်ုပ်၏အကောင့်</h3>
-        <div id="profileDetails" class="history-card" style="line-height: 1.8;">အကောင့်ဝင်ရန် လိုအပ်သည်။</div>
-        <button onclick="logout()" id="logoutBtn" class="btn btn-logout" style="display:none;">Logout Account</button>
+        <h3><i class="fas fa-user-circle"></i> My Account</h3>
+        <div id="profileDetails" style="background:var(--card); padding:20px; border-radius:15px; line-height:2;">
+            Please login to see account info.
+        </div>
+
+        <div id="adminPanel" class="admin-section">
+            <h4 style="color:var(--admin); margin-top:0;"><i class="fas fa-tools"></i> Admin Control</h4>
+            <small>Add Balance to User</small><br>
+            <input type="text" id="targetUid" placeholder="Enter User UID">
+            <input type="number" id="addAmount" placeholder="Amount (MMK)">
+            <button onclick="addBalance()" class="btn btn-admin">Update Balance</button>
+        </div>
+
+        <button onclick="logout()" id="logoutBtn" class="btn" style="background:#ff4757; color:white; margin-top:20px; display:none;">Logout</button>
     </div>
 
     <div class="bottom-nav">
-        <div class="nav-item active" onclick="tab('home', this)"><i class="fas fa-home"></i>Home</div>
-        <div class="nav-item" onclick="tab('history', this)"><i class="fas fa-history"></i>History</div>
-        <div class="nav-item" onclick="tab('profile', this)"><i class="fas fa-user"></i>Profile</div>
+        <div class="nav-item active" onclick="tab('home', this)"><i class="fas fa-gamepad"></i>Store</div>
+        <div class="nav-item" onclick="tab('history', this)"><i class="fas fa-receipt"></i>Orders</div>
+        <div class="nav-item" onclick="tab('profile', this)"><i class="fas fa-user-cog"></i>Account</div>
     </div>
 
     <script>
@@ -89,21 +106,30 @@
         const auth = firebase.auth();
         const db = firebase.firestore();
 
+        // Admin Email List
+        const admins = ["လူကြီးမင်းရဲ့Gmail@gmail.com"]; 
+
         function login() {
             const provider = new firebase.auth.GoogleAuthProvider();
             auth.signInWithPopup(provider);
         }
 
-        function logout() { auth.signOut(); location.reload(); }
+        function logout() { auth.signOut().then(() => location.reload()); }
 
         auth.onAuthStateChanged(user => {
             if (user) {
                 document.getElementById('userHeader').innerHTML = `<img src="${user.photoURL}" style="width:35px; border-radius:50%; border:2px solid var(--main);">`;
                 document.getElementById('userName').innerText = user.displayName;
                 document.getElementById('logoutBtn').style.display = 'block';
-                document.getElementById('profileDetails').innerHTML = `<b>Name:</b> ${user.displayName}<br><b>Email:</b> ${user.email}<br><b>User ID:</b> ${user.uid}`;
-                
-                // Real-time Balance
+                document.getElementById('profileDetails').innerHTML = `<b>Name:</b> ${user.displayName}<br><b>Email:</b> ${user.email}<br><b>UID:</b> <small>${user.uid}</small>`;
+
+                // Check Admin Status
+                if (admins.includes(user.email)) {
+                    document.getElementById('adminPanel').style.display = 'block';
+                    document.getElementById('adminBadge').style.display = 'block';
+                }
+
+                // Balance Sync
                 db.collection("users").doc(user.uid).onSnapshot(doc => {
                     if (doc.exists) {
                         document.getElementById('userBalance').innerText = (doc.data().balance || 0).toLocaleString() + " MMK";
@@ -112,23 +138,34 @@
                     }
                 });
 
-                // Get History
-                db.collection("orders").where("userId", "==", user.uid).onSnapshot(snap => {
+                // History Sync
+                db.collection("orders").where("userId", "==", user.uid).orderBy("timestamp", "desc").onSnapshot(snap => {
                     let html = "";
                     snap.forEach(doc => {
-                        let data = doc.data();
-                        html += `<div class="history-card">
-                            <div style="display:flex; justify-content:space-between">
-                                <b>${data.game}</b> <span class="status-done">${data.status}</span>
-                            </div>
-                            <small>${data.item} - ${data.price} MMK</small><br>
-                            <small style="opacity:0.6">${data.date}</small>
+                        let d = doc.data();
+                        html += `<div style="background:var(--card); padding:15px; border-radius:12px; margin-bottom:10px; border-left:4px solid var(--main);">
+                            <div style="display:flex; justify-content:space-between"><b>${d.game}</b> <span style="color:#2ecc71">${d.status}</span></div>
+                            <small>${d.item} - ${d.price} MMK</small>
                         </div>`;
                     });
-                    document.getElementById('historyList').innerHTML = html || "ဝယ်ယူမှုမှတ်တမ်းမရှိသေးပါ။";
+                    document.getElementById('historyList').innerHTML = html || "No orders yet.";
                 });
             }
         });
+
+        async function buyGame(gameName) {
+            alert(gameName + " ဝယ်ယူရန် လက်ကျန်ငွေ မလုံလောက်ပါ။ ကျေးဇူးပြု၍ Admin ထံမှ ငွေဖြည့်သွင်းပါ။");
+        }
+
+        async function addBalance() {
+            const uid = document.getElementById('targetUid').value;
+            const amt = parseInt(document.getElementById('addAmount').value);
+            if(!uid || !amt) return alert("အချက်အလက် ပြည့်စုံစွာ ဖြည့်ပါ။");
+            
+            const userRef = db.collection("users").doc(uid);
+            await userRef.update({ balance: firebase.firestore.FieldValue.increment(amt) });
+            alert("ငွေဖြည့်သွင်းမှု အောင်မြင်ပါသည်။");
+        }
 
         function tab(id, el) {
             document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
@@ -138,5 +175,4 @@
         }
     </script>
 </body>
-  </html>
-  
+</html>
