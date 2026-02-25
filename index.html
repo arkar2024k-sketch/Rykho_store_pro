@@ -18,7 +18,8 @@
         .wallet-card { background: linear-gradient(135deg, #00d2ff, #3a7bd5); padding: 25px; border-radius: 20px; text-align: center; margin-bottom: 20px; box-shadow: 0 8px 15px rgba(0,210,255,0.3); }
         .balance { font-size: 32px; font-weight: bold; margin: 5px 0; }
         .game-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; }
-        .game-item { background: var(--card); border-radius: 15px; overflow: hidden; border: 1px solid #333; transition: 0.3s; }
+        .game-item { background: var(--card); border-radius: 15px; overflow: hidden; border: 1px solid #333; transition: 0.3s; cursor: pointer; }
+        .game-item:active { transform: scale(0.95); }
         .game-item img { width: 100%; height: 120px; object-fit: cover; }
         .game-info { padding: 10px; text-align: center; }
         .btn { width: 100%; padding: 12px; border-radius: 12px; border: none; font-weight: bold; cursor: pointer; transition: 0.3s; }
@@ -35,7 +36,7 @@
 <body>
 
     <div class="header">
-        <div id="userHeader"><button onclick="login()" class="btn-main" style="padding: 5px 15px;">Login</button></div>
+        <div id="userHeader"><button onclick="login()" class="btn-main" style="padding: 5px 15px; border-radius: 8px;">Login</button></div>
         <div style="font-weight: 900; color: var(--main); font-size: 18px;">RYKHO STORE</div>
         <div id="adminBadge" style="display:none; color:var(--admin); font-size: 12px;"><i class="fas fa-user-shield"></i> Admin</div>
     </div>
@@ -49,15 +50,15 @@
         
         <h3 style="margin: 20px 0 15px 0;"><i class="fas fa-fire" style="color:#ff4757"></i> Hot Games</h3>
         <div class="game-grid">
-            <div class="game-item" onclick="buyGame('MLBB')">
+            <div class="game-item" onclick="openGame('MLBB')">
                 <img src="https://m.mobilelegends.com/static/images/index/logo.png">
                 <div class="game-info"><div>MLBB</div><small style="color:var(--main)">Instant-Topup</small></div>
             </div>
-            <div class="game-item" onclick="buyGame('Free Fire')">
+            <div class="game-item" onclick="openGame('Free Fire')">
                 <img src="https://img.tapimg.net/market/l_icon/9417869389f464062149e89d5351336c_360.png?imageView2/2/w/360/q/80/format/jpg/interlace/1/ignore-error/1">
                 <div class="game-info"><div>Free Fire</div><small style="color:var(--main)">UID-Only</small></div>
             </div>
-            <div class="game-item" onclick="buyGame('PUBG')">
+            <div class="game-item" onclick="openGame('PUBG')">
                 <img src="https://static-g.pubgmobile.com/m/common/images/icon_logo.png" style="background:#fff">
                 <div class="game-info"><div>PUBG</div><small style="color:var(--main)">Global-UC</small></div>
             </div>
@@ -77,8 +78,8 @@
 
         <div id="adminPanel" class="admin-section">
             <h4 style="color:var(--admin); margin-top:0;"><i class="fas fa-tools"></i> Admin Control</h4>
-            <small>Add Balance to User</small><br>
-            <input type="text" id="targetUid" placeholder="Enter User UID">
+            <small>Add Balance to User (Enter UID)</small><br>
+            <input type="text" id="targetUid" placeholder="User UID">
             <input type="number" id="addAmount" placeholder="Amount (MMK)">
             <button onclick="addBalance()" class="btn btn-admin">Update Balance</button>
         </div>
@@ -106,14 +107,29 @@
         const auth = firebase.auth();
         const db = firebase.firestore();
 
-        // Admin Email List
+        // ဈေးနှုန်းစာရင်းများ
+        const gameLists = {
+            "MLBB": [
+                { n: "86 Diamonds", p: 1800 },
+                { n: "172 Diamonds", p: 3500 },
+                { n: "257 Diamonds", p: 5200 },
+                { n: "706 Diamonds", p: 14500 }
+            ],
+            "Free Fire": [
+                { n: "100 Diamonds", p: 1600 },
+                { n: "210 Diamonds", p: 3100 },
+                { n: "530 Diamonds", p: 7500 }
+            ],
+            "PUBG": [
+                { n: "60 UC", p: 2000 },
+                { n: "325 UC", p: 10000 },
+                { n: "660 UC", p: 20000 }
+            ]
+        };
+
         const admins = ["လူကြီးမင်းရဲ့Gmail@gmail.com"]; 
 
-        function login() {
-            const provider = new firebase.auth.GoogleAuthProvider();
-            auth.signInWithPopup(provider);
-        }
-
+        function login() { auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()); }
         function logout() { auth.signOut().then(() => location.reload()); }
 
         auth.onAuthStateChanged(user => {
@@ -123,28 +139,22 @@
                 document.getElementById('logoutBtn').style.display = 'block';
                 document.getElementById('profileDetails').innerHTML = `<b>Name:</b> ${user.displayName}<br><b>Email:</b> ${user.email}<br><b>UID:</b> <small>${user.uid}</small>`;
 
-                // Check Admin Status
                 if (admins.includes(user.email)) {
                     document.getElementById('adminPanel').style.display = 'block';
                     document.getElementById('adminBadge').style.display = 'block';
                 }
 
-                // Balance Sync
                 db.collection("users").doc(user.uid).onSnapshot(doc => {
-                    if (doc.exists) {
-                        document.getElementById('userBalance').innerText = (doc.data().balance || 0).toLocaleString() + " MMK";
-                    } else {
-                        db.collection("users").doc(user.uid).set({ balance: 0, name: user.displayName, email: user.email });
-                    }
+                    if (doc.exists) document.getElementById('userBalance').innerText = (doc.data().balance || 0).toLocaleString() + " MMK";
+                    else db.collection("users").doc(user.uid).set({ balance: 0, name: user.displayName, email: user.email });
                 });
 
-                // History Sync
                 db.collection("orders").where("userId", "==", user.uid).orderBy("timestamp", "desc").onSnapshot(snap => {
                     let html = "";
                     snap.forEach(doc => {
                         let d = doc.data();
-                        html += `<div style="background:var(--card); padding:15px; border-radius:12px; margin-bottom:10px; border-left:4px solid var(--main);">
-                            <div style="display:flex; justify-content:space-between"><b>${d.game}</b> <span style="color:#2ecc71">${d.status}</span></div>
+                        html += `<div style="background:var(--card); padding:15px; border-radius:12px; margin-bottom:10px; border-left:4px solid var(--main); text-align:left;">
+                            <div style="display:flex; justify-content:space-between"><b>${d.game}</b> <span style="color:${d.status === 'Done' ? '#2ecc71' : '#f1c40f'}">${d.status}</span></div>
                             <small>${d.item} - ${d.price} MMK</small>
                         </div>`;
                     });
@@ -153,17 +163,39 @@
             }
         });
 
-        async function buyGame(gameName) {
-            alert(gameName + " ဝယ်ယူရန် လက်ကျန်ငွေ မလုံလောက်ပါ။ ကျေးဇူးပြု၍ Admin ထံမှ ငွေဖြည့်သွင်းပါ။");
+        function openGame(game) {
+            let list = gameLists[game];
+            let txt = `${game} Item ကိုရွေးပါ -\n\n`;
+            list.forEach((it, i) => txt += `${i+1}. ${it.n} - ${it.p} MMK\n`);
+            let choice = prompt(txt + "\nနံပါတ် (ဥပမာ- 1) ကိုရိုက်ထည့်ပါ:");
+            if(choice && list[choice-1]) buyItem(game, list[choice-1]);
+        }
+
+        async function buyItem(game, it) {
+            const user = auth.currentUser;
+            if(!user) return alert("ကျေးဇူးပြု၍ အရင် Login ဝင်ပါ!");
+
+            const doc = await db.collection("users").doc(user.uid).get();
+            const bal = doc.data().balance || 0;
+
+            if(bal >= it.p) {
+                let id = prompt(`${game} ID ကို ရိုက်ထည့်ပါ:`);
+                if(!id) return;
+                
+                await db.collection("users").doc(user.uid).update({ balance: bal - it.p });
+                await db.collection("orders").add({
+                    userId: user.uid, game: game, item: it.n, price: it.p, 
+                    gameId: id, status: "Pending", timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                alert("Order တင်ပြီးပါပြီ! Admin က ၅ မိနစ်အတွင်း လုပ်ဆောင်ပေးပါမည်။");
+            } else alert("လက်ကျန်ငွေ မလုံလောက်ပါ။");
         }
 
         async function addBalance() {
             const uid = document.getElementById('targetUid').value;
             const amt = parseInt(document.getElementById('addAmount').value);
             if(!uid || !amt) return alert("အချက်အလက် ပြည့်စုံစွာ ဖြည့်ပါ။");
-            
-            const userRef = db.collection("users").doc(uid);
-            await userRef.update({ balance: firebase.firestore.FieldValue.increment(amt) });
+            await db.collection("users").doc(uid).update({ balance: firebase.firestore.FieldValue.increment(amt) });
             alert("ငွေဖြည့်သွင်းမှု အောင်မြင်ပါသည်။");
         }
 
