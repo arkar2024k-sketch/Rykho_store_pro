@@ -1,66 +1,137 @@
-<script>
-    // ဂိမ်းအလိုက် ဈေးနှုန်း List များ
-    const gameLists = {
-        "MLBB": [
-            { id: 1, name: "86 Diamonds", price: 1800 },
-            { id: 2, name: "172 Diamonds", price: 3500 },
-            { id: 3, name: "257 Diamonds", price: 5200 },
-            { id: 4, name: "706 Diamonds", price: 14500 }
-        ],
-        "Free Fire": [
-            { id: 1, name: "100 Diamonds", price: 1600 },
-            { id: 2, name: "210 Diamonds", price: 3100 },
-            { id: 3, name: "530 Diamonds", price: 7500 }
-        ],
-        "PUBG": [
-            { id: 1, name: "60 UC", price: 2000 },
-            { id: 2, name: "325 UC", price: 10000 },
-            { id: 3, name: "660 UC", price: 20000 }
-        ]
-    };
+<!DOCTYPE html>
+<html lang="my">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RYKHO Store Pro</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <style>
+        :root { --main: #00d2ff; --bg: #0b141a; --card: #1e272e; }
+        body { font-family: 'Segoe UI', sans-serif; margin: 0; background: var(--bg); color: white; padding-bottom: 80px; }
+        .header { display: flex; justify-content: space-between; padding: 15px; background: #151d24; align-items: center; position: sticky; top: 0; z-index: 100; border-bottom: 2px solid var(--main); }
+        .page { display: none; padding: 15px; animation: fadeIn 0.3s; }
+        .page.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .wallet-card { background: linear-gradient(135deg, #00d2ff, #3a7bd5); padding: 25px; border-radius: 20px; text-align: center; margin-bottom: 20px; }
+        .balance { font-size: 32px; font-weight: bold; margin: 5px 0; }
+        .game-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; }
+        .game-item { background: var(--card); border-radius: 15px; overflow: hidden; border: 1px solid #333; text-align: center; padding-bottom: 10px; }
+        .game-item img { width: 100%; height: 100px; object-fit: cover; }
+        .btn-buy { background: var(--main); color: #000; border: none; padding: 8px 15px; border-radius: 8px; font-weight: bold; cursor: pointer; width: 80%; margin-top: 5px; }
+        .bottom-nav { position: fixed; bottom: 0; width: 100%; background: #151d24; display: flex; justify-content: space-around; padding: 12px 0; border-top: 1px solid #333; }
+        .nav-item { color: #888; text-decoration: none; font-size: 11px; text-align: center; cursor: pointer; }
+        .nav-item.active { color: var(--main); }
+        .nav-item i { font-size: 20px; display: block; margin-bottom: 3px; }
+    </style>
+</head>
+<body>
 
-    // ဂိမ်းနှိပ်လိုက်ရင် Item List ပေါ်လာစေရန်
-    async function buyGame(gameName) {
-        let items = gameLists[gameName];
-        let menuText = `${gameName} အတွက် ဝယ်ယူလိုသော Item ကို ရွေးပါ -\n\n`;
+    <div class="header">
+        <div id="userHeader"><button onclick="login()" style="background:var(--main); border:none; padding:5px 12px; border-radius:5px;">Login</button></div>
+        <div style="font-weight: 900; color: var(--main); font-size: 18px;">RYKHO STORE</div>
+    </div>
+
+    <div id="home" class="page active">
+        <div class="wallet-card">
+            <div style="font-size: 13px;">Available Balance</div>
+            <div class="balance" id="userBalance">0 MMK</div>
+            <div id="userName" style="font-size: 12px;">Welcome, Guest</div>
+        </div>
         
-        items.forEach((item, index) => {
-            menuText += `${index + 1}. ${item.name} - ${item.price} MMK\n`;
+        <h3>Game Topup</h3>
+        <div class="game-grid">
+            <div class="game-item">
+                <img src="https://m.mobilelegends.com/static/images/index/logo.png">
+                <div style="margin:5px 0;">MLBB</div>
+                <button class="btn-buy" onclick="showList('MLBB')">Select</button>
+            </div>
+            <div class="game-item">
+                <img src="https://img.tapimg.net/market/l_icon/9417869389f464062149e89d5351336c_360.png?imageView2/2/w/360/q/80/format/jpg/interlace/1/ignore-error/1">
+                <div style="margin:5px 0;">Free Fire</div>
+                <button class="btn-buy" onclick="showList('Free Fire')">Select</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="history" class="page">
+        <h3>Order History</h3>
+        <div id="historyList">No orders yet.</div>
+    </div>
+
+    <div id="profile" class="page">
+        <h3>My Account</h3>
+        <div id="profileDetails" style="background:var(--card); padding:20px; border-radius:15px;">Login to see details.</div>
+        <button onclick="logout()" id="logoutBtn" style="display:none; background:#ff4757; color:white; border:none; padding:12px; width:100%; border-radius:10px; margin-top:20px;">Logout</button>
+    </div>
+
+    <div class="bottom-nav">
+        <div class="nav-item active" onclick="tab('home', this)"><i class="fas fa-store"></i>Store</div>
+        <div class="nav-item" onclick="tab('history', this)"><i class="fas fa-receipt"></i>Orders</div>
+        <div class="nav-item" onclick="tab('profile', this)"><i class="fas fa-user"></i>Account</div>
+    </div>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyB7JGHFW8AKLbjIy8dIolM_pLJp3QC2Q0w",
+            authDomain: "rykho-store.firebaseapp.com",
+            projectId: "rykho-store",
+            storageBucket: "rykho-store.firebasestorage.app",
+            messagingSenderId: "133582847768",
+            appId: "1:133582847768:web:433490726f75b74d71686d"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        const gameItems = {
+            "MLBB": [ {n:"86 Diamonds", p:1800}, {n:"172 Diamonds", p:3500} ],
+            "Free Fire": [ {n:"100 Diamonds", p:1600}, {n:"210 Diamonds", p:3100} ]
+        };
+
+        function login() { auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()); }
+        function logout() { auth.signOut().then(()=>location.reload()); }
+
+        auth.onAuthStateChanged(user => {
+            if (user) {
+                document.getElementById('userHeader').innerHTML = `<img src="${user.photoURL}" style="width:30px; border-radius:50%;">`;
+                document.getElementById('userName').innerText = user.displayName;
+                document.getElementById('logoutBtn').style.display = 'block';
+                document.getElementById('profileDetails').innerHTML = `Name: ${user.displayName}<br>Email: ${user.email}`;
+                
+                db.collection("users").doc(user.uid).onSnapshot(doc => {
+                    if (doc.exists) document.getElementById('userBalance').innerText = (doc.data().balance || 0).toLocaleString() + " MMK";
+                    else db.collection("users").doc(user.uid).set({balance:0, name:user.displayName});
+                });
+
+                db.collection("orders").where("userId","==",user.uid).onSnapshot(snap => {
+                    let html = "";
+                    snap.forEach(doc => {
+                        let d = doc.data();
+                        html += `<div style="background:var(--card); padding:10px; border-radius:10px; margin-bottom:10px;">${d.game} - ${d.item} (${d.status})</div>`;
+                    });
+                    document.getElementById('historyList').innerHTML = html || "No orders yet.";
+                });
+            }
         });
 
-        let choice = prompt(menuText + "\nနံပါတ် (ဥပမာ- 1) ကို ရိုက်ထည့်ပါ:");
+        function showList(game) {
+            let list = gameItems[game];
+            let txt = `${game} Item ရွေးပါ:\n`;
+            list.forEach((it, i) => txt += `${i+1}. ${it.n} - ${it.p} MMK\n`);
+            let c = prompt(txt);
+            if(c && list[c-1]) processOrder(game, list[c-1]);
+        }
+
+        async function processOrder(game, it) {
+            const user = auth.currentUser;
+            if(!user) return alert("Login အရင်ဝင်ပါ");
+            const doc = await db.collection("users").doc(user.uid).get();
+            const bal = doc.data().balance || 0;
+            if(bal >= it.p) {
+                await db.collection("users").doc(user.uid).update({balance: bal - it.p});
+                await db.collection("orders").add({userId:user.uid, game:game, item:it.n
         
-        if (choice && items[choice - 1]) {
-            let selectedItem = items[choice - 1];
-            confirmPurchase(gameName, selectedItem);
-        }
-    }
-
-    async function confirmPurchase(game, item) {
-        const user = auth.currentUser;
-        if (!user) return alert("ကျေးဇူးပြု၍ အရင် Login ဝင်ပါ!");
-
-        const userRef = db.collection("users").doc(user.uid);
-        const doc = await userRef.get();
-        const currentBalance = doc.data().balance || 0;
-
-        if (currentBalance >= item.price) {
-            // ပိုက်ဆံနှုတ်ခြင်း
-            await userRef.update({ balance: currentBalance - item.price });
-
-            // မှတ်တမ်းသွင်းခြင်း
-            await db.collection("orders").add({
-                userId: user.uid,
-                game: game,
-                item: item.name,
-                price: item.price,
-                status: "Pending", // Admin က Done ပေးရမည်
-                timestamp: firebase.firestore.FieldValue.serverTimestamp()
-            });
-
-            alert(`${item.name} ဝယ်ယူမှု တင်ပြပြီးပါပြီ။ Admin က ၅ မိနစ်အတွင်း လုပ်ဆောင်ပေးပါမည်။`);
-        } else {
-            alert(`လက်ကျန်ငွေ မလုံလောက်ပါ။\nလိုအပ်သောငွေ: ${item.price} MMK\nလက်ရှိငွေ: ${currentBalance} MMK`);
-        }
-    }
-</script>
