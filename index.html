@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RYKHO Store Pro</title>
+    <title>RYKHO Store Pro + TG Bot</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
@@ -13,32 +13,26 @@
         body { font-family: 'Segoe UI', sans-serif; margin: 0; background: var(--bg); color: white; padding-bottom: 80px; overflow-x: hidden; }
         .header { display: flex; justify-content: space-between; padding: 15px; background: #151d24; align-items: center; position: sticky; top: 0; z-index: 100; border-bottom: 2px solid var(--main); }
         .page { display: none; padding: 15px; animation: fadeIn 0.3s; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         .page.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         .wallet-card { background: linear-gradient(135deg, #00d2ff, #3a7bd5); padding: 25px; border-radius: 20px; text-align: center; margin-bottom: 20px; box-shadow: 0 8px 15px rgba(0,210,255,0.3); }
         .balance { font-size: 32px; font-weight: bold; margin: 5px 0; }
         .game-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; }
-        .game-item { background: var(--card); border-radius: 15px; overflow: hidden; border: 1px solid #333; transition: 0.3s; cursor: pointer; }
+        .game-item { background: var(--card); border-radius: 15px; overflow: hidden; border: 1px solid #333; text-align: center; cursor: pointer; transition: 0.3s; }
         .game-item:active { transform: scale(0.95); }
         .game-item img { width: 100%; height: 120px; object-fit: cover; }
-        .game-info { padding: 10px; text-align: center; }
-        .btn { width: 100%; padding: 12px; border-radius: 12px; border: none; font-weight: bold; cursor: pointer; transition: 0.3s; }
-        .btn-main { background: var(--main); color: #000; }
-        .btn-admin { background: var(--admin); color: white; margin-top: 10px; }
         .bottom-nav { position: fixed; bottom: 0; width: 100%; background: #151d24; display: flex; justify-content: space-around; padding: 12px 0; border-top: 1px solid #333; z-index: 1000; }
         .nav-item { color: #888; text-decoration: none; font-size: 11px; text-align: center; cursor: pointer; }
         .nav-item.active { color: var(--main); }
         .nav-item i { font-size: 20px; display: block; margin-bottom: 3px; }
-        .admin-section { background: rgba(231, 76, 60, 0.1); border: 1px solid var(--admin); padding: 15px; border-radius: 15px; margin-top: 20px; display: none; }
         input { width: 90%; padding: 10px; margin: 10px 0; border-radius: 8px; border: 1px solid #444; background: #151d24; color: white; }
     </style>
 </head>
 <body>
 
     <div class="header">
-        <div id="userHeader"><button onclick="login()" class="btn-main" style="padding: 5px 15px; border-radius: 8px;">Login</button></div>
+        <div id="userHeader"><button onclick="login()" style="background:var(--main); border:none; padding:5px 15px; border-radius:8px; font-weight:bold; cursor:pointer;">Login</button></div>
         <div style="font-weight: 900; color: var(--main); font-size: 18px;">RYKHO STORE</div>
-        <div id="adminBadge" style="display:none; color:var(--admin); font-size: 12px;"><i class="fas fa-user-shield"></i> Admin</div>
     </div>
 
     <div id="home" class="page active">
@@ -48,43 +42,38 @@
             <div id="userName" style="font-size: 12px;">Welcome, Guest</div>
         </div>
         
-        <h3 style="margin: 20px 0 15px 0;"><i class="fas fa-fire" style="color:#ff4757"></i> Hot Games</h3>
+        <h3>Game Topup</h3>
         <div class="game-grid">
             <div class="game-item" onclick="openGame('MLBB')">
                 <img src="https://m.mobilelegends.com/static/images/index/logo.png">
-                <div class="game-info"><div>MLBB</div><small style="color:var(--main)">Instant-Topup</small></div>
+                <div style="padding:10px;">MLBB</div>
             </div>
             <div class="game-item" onclick="openGame('Free Fire')">
                 <img src="https://img.tapimg.net/market/l_icon/9417869389f464062149e89d5351336c_360.png?imageView2/2/w/360/q/80/format/jpg/interlace/1/ignore-error/1">
-                <div class="game-info"><div>Free Fire</div><small style="color:var(--main)">UID-Only</small></div>
-            </div>
-            <div class="game-item" onclick="openGame('PUBG')">
-                <img src="https://static-g.pubgmobile.com/m/common/images/icon_logo.png" style="background:#fff">
-                <div class="game-info"><div>PUBG</div><small style="color:var(--main)">Global-UC</small></div>
+                <div style="padding:10px;">Free Fire</div>
             </div>
         </div>
     </div>
 
     <div id="history" class="page">
-        <h3><i class="fas fa-history"></i> Order History</h3>
+        <h3>Order History</h3>
         <div id="historyList" style="color:#888; text-align:center; margin-top:50px;">No orders yet.</div>
     </div>
 
     <div id="profile" class="page">
-        <h3><i class="fas fa-user-circle"></i> My Account</h3>
+        <h3>My Account</h3>
         <div id="profileDetails" style="background:var(--card); padding:20px; border-radius:15px; line-height:2;">
             Please login to see account info.
         </div>
-
-        <div id="adminPanel" class="admin-section">
-            <h4 style="color:var(--admin); margin-top:0;"><i class="fas fa-tools"></i> Admin Control</h4>
-            <small>Add Balance to User (Enter UID)</small><br>
-            <input type="text" id="targetUid" placeholder="User UID">
+        
+        <div id="adminPanel" style="display:none; border: 1px solid var(--admin); padding:15px; border-radius:15px; margin-top:20px; background: rgba(231, 76, 60, 0.1);">
+            <h4 style="color:var(--admin); margin-top:0;">Admin Control</h4>
+            <input type="text" id="targetUid" placeholder="Enter User UID">
             <input type="number" id="addAmount" placeholder="Amount (MMK)">
-            <button onclick="addBalance()" class="btn btn-admin">Update Balance</button>
+            <button onclick="addBalance()" style="background:var(--admin); color:white; border:none; padding:12px; width:100%; border-radius:8px; font-weight:bold; cursor:pointer;">Update Balance</button>
         </div>
 
-        <button onclick="logout()" id="logoutBtn" class="btn" style="background:#ff4757; color:white; margin-top:20px; display:none;">Logout</button>
+        <button onclick="logout()" id="logoutBtn" style="display:none; background:#ff4757; color:white; border:none; padding:12px; width:100%; border-radius:10px; margin-top:20px; font-weight:bold; cursor:pointer;">Logout</button>
     </div>
 
     <div class="bottom-nav">
@@ -107,30 +96,18 @@
         const auth = firebase.auth();
         const db = firebase.firestore();
 
-        // ဈေးနှုန်းစာရင်းများ
+        // --- Telegram & Admin Config ---
+        const botToken = "8632827240:AAGwUR3do4kbIjkBIDQe0eP0a062nW20Q8k"; 
+        const chatId = "7694529131";
+        const admins = ["ararkarkyaw2024@gmail.com"]; // လူကြီးမင်း Gmail ပြောင်းထားပေးပါတယ်
+
         const gameLists = {
-            "MLBB": [
-                { n: "86 Diamonds", p: 1800 },
-                { n: "172 Diamonds", p: 3500 },
-                { n: "257 Diamonds", p: 5200 },
-                { n: "706 Diamonds", p: 14500 }
-            ],
-            "Free Fire": [
-                { n: "100 Diamonds", p: 1600 },
-                { n: "210 Diamonds", p: 3100 },
-                { n: "530 Diamonds", p: 7500 }
-            ],
-            "PUBG": [
-                { n: "60 UC", p: 2000 },
-                { n: "325 UC", p: 10000 },
-                { n: "660 UC", p: 20000 }
-            ]
+            "MLBB": [{n:"86 Diamonds", p:1800}, {n:"172 Diamonds", p:3500}, {n:"257 Diamonds", p:5200}],
+            "Free Fire": [{n:"100 Diamonds", p:1600}, {n:"210 Diamonds", p:3100}, {n:"530 Diamonds", p:7500}]
         };
 
-        const admins = ["လူကြီးမင်းရဲ့Gmail@gmail.com"]; 
-
         function login() { auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()); }
-        function logout() { auth.signOut().then(() => location.reload()); }
+        function logout() { auth.signOut().then(()=>location.reload()); }
 
         auth.onAuthStateChanged(user => {
             if (user) {
@@ -138,23 +115,20 @@
                 document.getElementById('userName').innerText = user.displayName;
                 document.getElementById('logoutBtn').style.display = 'block';
                 document.getElementById('profileDetails').innerHTML = `<b>Name:</b> ${user.displayName}<br><b>Email:</b> ${user.email}<br><b>UID:</b> <small>${user.uid}</small>`;
-
-                if (admins.includes(user.email)) {
-                    document.getElementById('adminPanel').style.display = 'block';
-                    document.getElementById('adminBadge').style.display = 'block';
-                }
-
+                
+                if(admins.includes(user.email)) document.getElementById('adminPanel').style.display = 'block';
+                
                 db.collection("users").doc(user.uid).onSnapshot(doc => {
                     if (doc.exists) document.getElementById('userBalance').innerText = (doc.data().balance || 0).toLocaleString() + " MMK";
-                    else db.collection("users").doc(user.uid).set({ balance: 0, name: user.displayName, email: user.email });
+                    else db.collection("users").doc(user.uid).set({balance:0, name:user.displayName, email:user.email});
                 });
 
-                db.collection("orders").where("userId", "==", user.uid).orderBy("timestamp", "desc").onSnapshot(snap => {
+                db.collection("orders").where("userId","==",user.uid).orderBy("timestamp","desc").onSnapshot(snap => {
                     let html = "";
                     snap.forEach(doc => {
                         let d = doc.data();
                         html += `<div style="background:var(--card); padding:15px; border-radius:12px; margin-bottom:10px; border-left:4px solid var(--main); text-align:left;">
-                            <div style="display:flex; justify-content:space-between"><b>${d.game}</b> <span style="color:${d.status === 'Done' ? '#2ecc71' : '#f1c40f'}">${d.status}</span></div>
+                            <div style="display:flex; justify-content:space-between"><b>${d.game}</b> <span style="color:#f1c40f">${d.status}</span></div>
                             <small>${d.item} - ${d.price} MMK</small>
                         </div>`;
                     });
@@ -167,36 +141,34 @@
             let list = gameLists[game];
             let txt = `${game} Item ကိုရွေးပါ -\n\n`;
             list.forEach((it, i) => txt += `${i+1}. ${it.n} - ${it.p} MMK\n`);
-            let choice = prompt(txt + "\nနံပါတ် (ဥပမာ- 1) ကိုရိုက်ထည့်ပါ:");
+            let choice = prompt(txt + "\nနံပါတ်ရိုက်ထည့်ပါ:");
             if(choice && list[choice-1]) buyItem(game, list[choice-1]);
         }
 
         async function buyItem(game, it) {
             const user = auth.currentUser;
-            if(!user) return alert("ကျေးဇူးပြု၍ အရင် Login ဝင်ပါ!");
-
             const doc = await db.collection("users").doc(user.uid).get();
             const bal = doc.data().balance || 0;
-
             if(bal >= it.p) {
-                let id = prompt(`${game} ID ကို ရိုက်ထည့်ပါ:`);
+                let id = prompt(`${game} ID & Server ရိုက်ထည့်ပါ:`);
                 if(!id) return;
+                await db.collection("users").doc(user.uid).update({balance: bal - it.p});
+                await db.collection("orders").add({userId:user.uid, game:game, item:it.n, price:it.p, gameId:id, status:"Pending", timestamp:firebase.firestore.FieldValue.serverTimestamp()});
                 
-                await db.collection("users").doc(user.uid).update({ balance: bal - it.p });
-                await db.collection("orders").add({
-                    userId: user.uid, game: game, item: it.n, price: it.p, 
-                    gameId: id, status: "Pending", timestamp: firebase.firestore.FieldValue.serverTimestamp()
-                });
-                alert("Order တင်ပြီးပါပြီ! Admin က ၅ မိနစ်အတွင်း လုပ်ဆောင်ပေးပါမည်။");
+                // Telegram Notification
+                const msg = `🔔 <b>Order အသစ်!</b>\n\n👤 ဝယ်သူ: ${user.displayName}\n🎮 ဂိမ်း: ${game}\n💎 ပစ္စည်း: ${it.n}\n🆔 ID: ${id}\n💰 ဈေးနှုန်း: ${it.p} MMK\n🆔 User UID: ${user.uid}`;
+                fetch(`https://api.telegram.org/bot${botToken}/sendMessage?chat_id=${chatId}&text=${encodeURIComponent(msg)}&parse_mode=HTML`);
+                
+                alert("Order တင်ပြီးပါပြီ! Admin ဆီ Telegram ကနေ အကြောင်းကြားစာ ပို့လိုက်ပါပြီ။");
             } else alert("လက်ကျန်ငွေ မလုံလောက်ပါ။");
         }
 
         async function addBalance() {
             const uid = document.getElementById('targetUid').value;
             const amt = parseInt(document.getElementById('addAmount').value);
-            if(!uid || !amt) return alert("အချက်အလက် ပြည့်စုံစွာ ဖြည့်ပါ။");
-            await db.collection("users").doc(uid).update({ balance: firebase.firestore.FieldValue.increment(amt) });
-            alert("ငွေဖြည့်သွင်းမှု အောင်မြင်ပါသည်။");
+            if(!uid || !amt) return alert("အချက်အလက်ပြည့်စုံအောင်ဖြည့်ပါ။");
+            await db.collection("users").doc(uid).update({balance: firebase.firestore.FieldValue.increment(amt)});
+            alert("ငွေဖြည့်သွင်းမှု အောင်မြင်သည်။");
         }
 
         function tab(id, el) {
