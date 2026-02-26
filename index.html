@@ -3,83 +3,108 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RYKHO Store Pro + TG Bot</title>
+    <title>RYKHO Store Pro - Premium Edition</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <style>
-        :root { --main: #00d2ff; --bg: #0b141a; --card: #1e272e; --admin: #e74c3c; }
+        :root { --main: #00d2ff; --bg: #0b141a; --card: #1e272e; --admin: #ff4757; --accent: #2ecc71; }
         body { font-family: 'Segoe UI', sans-serif; margin: 0; background: var(--bg); color: white; padding-bottom: 80px; overflow-x: hidden; }
-        .header { display: flex; justify-content: space-between; padding: 15px; background: #151d24; align-items: center; position: sticky; top: 0; z-index: 100; border-bottom: 2px solid var(--main); }
-        .page { display: none; padding: 15px; animation: fadeIn 0.3s; }
+        
+        .header { display: flex; justify-content: space-between; padding: 15px; background: rgba(21, 29, 36, 0.95); backdrop-filter: blur(10px); align-items: center; position: sticky; top: 0; z-index: 100; border-bottom: 2px solid var(--main); }
+        .page { display: none; padding: 15px; animation: slideUp 0.4s ease; }
         .page.active { display: block; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        .wallet-card { background: linear-gradient(135deg, #00d2ff, #3a7bd5); padding: 25px; border-radius: 20px; text-align: center; margin-bottom: 20px; box-shadow: 0 8px 15px rgba(0,210,255,0.3); }
-        .balance { font-size: 32px; font-weight: bold; margin: 5px 0; }
+        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+        .wallet-card { background: linear-gradient(135deg, #00d2ff, #3a7bd5); padding: 25px; border-radius: 20px; text-align: center; margin-bottom: 25px; box-shadow: 0 10px 20px rgba(0,210,255,0.2); }
+        .balance { font-size: 35px; font-weight: 900; }
+
         .game-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; }
-        .game-item { background: var(--card); border-radius: 15px; overflow: hidden; border: 1px solid #333; text-align: center; cursor: pointer; transition: 0.3s; }
-        .game-item:active { transform: scale(0.95); }
+        .game-item { background: var(--card); border-radius: 18px; overflow: hidden; border: 1px solid #333; text-align: center; cursor: pointer; transition: 0.3s; }
         .game-item img { width: 100%; height: 120px; object-fit: cover; }
-        .bottom-nav { position: fixed; bottom: 0; width: 100%; background: #151d24; display: flex; justify-content: space-around; padding: 12px 0; border-top: 1px solid #333; z-index: 1000; }
-        .nav-item { color: #888; text-decoration: none; font-size: 11px; text-align: center; cursor: pointer; }
+        
+        /* Modern Modal for Items */
+        .modal { display: none; position: fixed; bottom: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 2000; justify-content: flex-end; flex-direction: column; }
+        .modal-content { background: var(--card); padding: 20px; border-radius: 25px 25px 0 0; max-height: 85vh; overflow-y: auto; border-top: 3px solid var(--main); animation: slideIn 0.3s ease; }
+        @keyframes slideIn { from { transform: translateY(100%); } to { transform: translateY(0); } }
+
+        .item-option { background: #252e35; padding: 15px; border-radius: 12px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; border: 2px solid transparent; cursor: pointer; }
+        .item-option.selected { border-color: var(--main); background: rgba(0, 210, 255, 0.1); }
+        .item-option i { color: var(--main); display: none; font-size: 18px; }
+        .item-option.selected i { display: block; }
+
+        .btn-confirm { background: var(--main); color: #000; border: none; padding: 15px; width: 100%; border-radius: 12px; font-weight: bold; font-size: 16px; margin-top: 15px; cursor: pointer; box-shadow: 0 5px 15px rgba(0,210,255,0.3); }
+        
+        .bottom-nav { position: fixed; bottom: 0; width: 100%; background: #151d24; display: flex; justify-content: space-around; padding: 15px 0; border-top: 1px solid #333; z-index: 1000; }
+        .nav-item { color: #888; font-size: 12px; text-align: center; cursor: pointer; }
         .nav-item.active { color: var(--main); }
-        .nav-item i { font-size: 20px; display: block; margin-bottom: 3px; }
-        input { width: 90%; padding: 10px; margin: 10px 0; border-radius: 8px; border: 1px solid #444; background: #151d24; color: white; }
+        .nav-item i { font-size: 22px; display: block; margin-bottom: 4px; }
+
+        input { width: 92%; padding: 12px; margin: 10px 0; border-radius: 10px; border: 1px solid #444; background: #0b141a; color: white; outline: none; }
+        .order-card { background: var(--card); padding: 15px; border-radius: 15px; margin-bottom: 12px; border-left: 5px solid var(--main); }
     </style>
 </head>
 <body>
 
     <div class="header">
-        <div id="userHeader"><button onclick="login()" style="background:var(--main); border:none; padding:5px 15px; border-radius:8px; font-weight:bold; cursor:pointer;">Login</button></div>
-        <div style="font-weight: 900; color: var(--main); font-size: 18px;">RYKHO STORE</div>
+        <div id="userHeader"><button onclick="login()" style="background:var(--main); border:none; padding:8px 18px; border-radius:10px; font-weight:bold;">Login</button></div>
+        <div style="font-weight: 900; color: var(--main); font-size: 20px;">RYKHO STORE</div>
+        <div><i class="fas fa-headset"></i></div>
     </div>
 
     <div id="home" class="page active">
         <div class="wallet-card">
-            <div style="font-size: 13px; opacity: 0.9;">Available Balance</div>
+            <div style="font-size: 14px; opacity: 0.8;">လက်ကျန်ငွေ</div>
             <div class="balance" id="userBalance">0 MMK</div>
-            <div id="userName" style="font-size: 12px;">Welcome, Guest</div>
+            <div id="userName" style="font-size: 13px; margin-top: 5px;">Guest</div>
         </div>
         
         <h3>Game Topup</h3>
         <div class="game-grid">
-            <div class="game-item" onclick="openGame('MLBB')">
+            <div class="game-item" onclick="openItemMenu('MLBB')">
                 <img src="https://m.mobilelegends.com/static/images/index/logo.png">
-                <div style="padding:10px;">MLBB</div>
+                <div style="padding:12px; font-weight:bold;">MLBB</div>
             </div>
-            <div class="game-item" onclick="openGame('Free Fire')">
+            <div class="game-item" onclick="openItemMenu('Free Fire')">
                 <img src="https://img.tapimg.net/market/l_icon/9417869389f464062149e89d5351336c_360.png?imageView2/2/w/360/q/80/format/jpg/interlace/1/ignore-error/1">
-                <div style="padding:10px;">Free Fire</div>
+                <div style="padding:12px; font-weight:bold;">Free Fire</div>
             </div>
+        </div>
+    </div>
+
+    <div id="itemModal" class="modal" onclick="closeModal(event)">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <h3 id="modalTitle" style="margin-top:0; color:var(--main);">Item ရွေးချယ်ပါ</h3>
+            <div id="itemList" class="item-list"></div>
+            <input type="text" id="gamePlayerId" placeholder="Player ID (Server) ရိုက်ထည့်ပါ">
+            <button id="confirmBtn" class="btn-confirm" onclick="finalOrder()">ဝယ်ယူမည်</button>
+            <button onclick="closeModal(null)" style="background:transparent; color:#888; border:none; width:100%; margin-top:10px;">ပိတ်မည်</button>
         </div>
     </div>
 
     <div id="history" class="page">
-        <h3>Order History</h3>
-        <div id="historyList" style="color:#888; text-align:center; margin-top:50px;">No orders yet.</div>
+        <h3>ဝယ်ယူမှုမှတ်တမ်း</h3>
+        <div id="historyList"></div>
     </div>
 
     <div id="profile" class="page">
-        <h3>My Account</h3>
-        <div id="profileDetails" style="background:var(--card); padding:20px; border-radius:15px; line-height:2;">
-            Please login to see account info.
-        </div>
+        <h3>ကိုယ်ရေးအချက်အလက်</h3>
+        <div id="profileDetails" style="background:var(--card); padding:20px; border-radius:18px;"></div>
         
-        <div id="adminPanel" style="display:none; border: 1px solid var(--admin); padding:15px; border-radius:15px; margin-top:20px; background: rgba(231, 76, 60, 0.1);">
-            <h4 style="color:var(--admin); margin-top:0;">Admin Control</h4>
-            <input type="text" id="targetUid" placeholder="Enter User UID">
-            <input type="number" id="addAmount" placeholder="Amount (MMK)">
-            <button onclick="addBalance()" style="background:var(--admin); color:white; border:none; padding:12px; width:100%; border-radius:8px; font-weight:bold; cursor:pointer;">Update Balance</button>
+        <div id="adminPanel" style="display:none; border: 1px solid var(--admin); padding:20px; border-radius:18px; margin-top:20px;">
+            <h4 style="color:var(--admin); margin-top:0;">Admin Panel</h4>
+            <input type="text" id="targetUid" placeholder="ဝယ်သူ၏ UID ထည့်ပါ">
+            <input type="number" id="addAmount" placeholder="ပိုက်ဆံပမာဏ (MMK)">
+            <button onclick="addBalance()" style="background:var(--admin); color:white; border:none; padding:12px; width:100%; border-radius:10px; font-weight:bold;">ငွေဖြည့်သွင်းမည်</button>
         </div>
-
-        <button onclick="logout()" id="logoutBtn" style="display:none; background:#ff4757; color:white; border:none; padding:12px; width:100%; border-radius:10px; margin-top:20px; font-weight:bold; cursor:pointer;">Logout</button>
+        <button onclick="logout()" id="logoutBtn" style="display:none; background:#ff4757; color:white; border:none; padding:15px; width:100%; border-radius:12px; margin-top:20px; font-weight:bold;">Logout ထွက်မည်</button>
     </div>
 
     <div class="bottom-nav">
-        <div class="nav-item active" onclick="tab('home', this)"><i class="fas fa-gamepad"></i>Store</div>
-        <div class="nav-item" onclick="tab('history', this)"><i class="fas fa-receipt"></i>Orders</div>
-        <div class="nav-item" onclick="tab('profile', this)"><i class="fas fa-user-cog"></i>Account</div>
+        <div class="nav-item active" onclick="tab('home', this)"><i class="fas fa-store"></i>ဆိုင်</div>
+        <div class="nav-item" onclick="tab('history', this)"><i class="fas fa-history"></i>မှတ်တမ်း</div>
+        <div class="nav-item" onclick="tab('profile', this)"><i class="fas fa-user"></i>အကောင့်</div>
     </div>
 
     <script>
@@ -91,20 +116,21 @@
             messagingSenderId: "133582847768",
             appId: "1:133582847768:web:433490726f75b74d71686d"
         };
-
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
         const db = firebase.firestore();
 
-        // --- Telegram & Admin Config ---
         const botToken = "8632827240:AAGwUR3do4kbIjkBIDQe0eP0a062nW20Q8k"; 
         const chatId = "7694529131";
-        const admins = ["ararkarkyaw2024@gmail.com"]; // လူကြီးမင်း Gmail ပြောင်းထားပေးပါတယ်
+        const admins = ["ararkarkyaw2024@gmail.com"];
 
-        const gameLists = {
-            "MLBB": [{n:"86 Diamonds", p:1800}, {n:"172 Diamonds", p:3500}, {n:"257 Diamonds", p:5200}],
-            "Free Fire": [{n:"100 Diamonds", p:1600}, {n:"210 Diamonds", p:3100}, {n:"530 Diamonds", p:7500}]
+        const gameData = {
+            "MLBB": [ {n:"86 Diamonds", p:1800}, {n:"172 Diamonds", p:3500}, {n:"257 Diamonds", p:5200} ],
+            "Free Fire": [ {n:"100 Diamonds", p:1600}, {n:"210 Diamonds", p:3100}, {n:"530 Diamonds", p:7500} ]
         };
+
+        let currentSelectedGame = "";
+        let currentSelectedItem = null;
 
         function login() { auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()); }
         function logout() { auth.signOut().then(()=>location.reload()); }
@@ -114,8 +140,7 @@
                 document.getElementById('userHeader').innerHTML = `<img src="${user.photoURL}" style="width:35px; border-radius:50%; border:2px solid var(--main);">`;
                 document.getElementById('userName').innerText = user.displayName;
                 document.getElementById('logoutBtn').style.display = 'block';
-                document.getElementById('profileDetails').innerHTML = `<b>Name:</b> ${user.displayName}<br><b>Email:</b> ${user.email}<br><b>UID:</b> <small>${user.uid}</small>`;
-                
+                document.getElementById('profileDetails').innerHTML = `<b>အမည်:</b> ${user.displayName}<br><b>Email:</b> ${user.email}<br><b>UID:</b> <small>${user.uid}</small>`;
                 if(admins.includes(user.email)) document.getElementById('adminPanel').style.display = 'block';
                 
                 db.collection("users").doc(user.uid).onSnapshot(doc => {
@@ -123,50 +148,77 @@
                     else db.collection("users").doc(user.uid).set({balance:0, name:user.displayName, email:user.email});
                 });
 
+                // Real-time History Update
                 db.collection("orders").where("userId","==",user.uid).orderBy("timestamp","desc").onSnapshot(snap => {
                     let html = "";
                     snap.forEach(doc => {
                         let d = doc.data();
-                        html += `<div style="background:var(--card); padding:15px; border-radius:12px; margin-bottom:10px; border-left:4px solid var(--main); text-align:left;">
-                            <div style="display:flex; justify-content:space-between"><b>${d.game}</b> <span style="color:#f1c40f">${d.status}</span></div>
-                            <small>${d.item} - ${d.price} MMK</small>
+                        html += `<div class="order-card" style="border-left-color:${d.status==='Done'?'#2ecc71':'#f1c40f'}">
+                            <div style="display:flex; justify-content:space-between"><b>${d.game}</b> <span style="color:${d.status==='Done'?'#2ecc71':'#f1c40f'}">${d.status}</span></div>
+                            <div style="font-size:13px; margin-top:5px;">${d.item} - ${d.price} MMK</div>
+                            <div style="font-size:11px; color:#888; margin-top:5px;">ID: ${d.gameId}</div>
                         </div>`;
                     });
-                    document.getElementById('historyList').innerHTML = html || "No orders yet.";
+                    document.getElementById('historyList').innerHTML = html || "<center style='margin-top:50px; color:#666;'>ဝယ်ယူမှုမှတ်တမ်းမရှိသေးပါ။</center>";
                 });
             }
         });
 
-        function openGame(game) {
-            let list = gameLists[game];
-            let txt = `${game} Item ကိုရွေးပါ -\n\n`;
-            list.forEach((it, i) => txt += `${i+1}. ${it.n} - ${it.p} MMK\n`);
-            let choice = prompt(txt + "\nနံပါတ်ရိုက်ထည့်ပါ:");
-            if(choice && list[choice-1]) buyItem(game, list[choice-1]);
+        function openItemMenu(game) {
+            currentSelectedGame = game;
+            currentSelectedItem = null;
+            document.getElementById('modalTitle').innerText = `${game} Item ရွေးပါ`;
+            let html = "";
+            gameData[game].forEach((it, i) => {
+                html += `<div class="item-option" onclick="selectItem(this, ${i})">
+                            <span>${it.n}</span>
+                            <span><b>${it.p} MMK</b> <i class="fas fa-check-circle"></i></span>
+                         </div>`;
+            });
+            document.getElementById('itemList').innerHTML = html;
+            document.getElementById('itemModal').style.display = "flex";
         }
 
-        async function buyItem(game, it) {
+        function selectItem(el, index) {
+            document.querySelectorAll('.item-option').forEach(opt => opt.classList.remove('selected'));
+            el.classList.add('selected');
+            currentSelectedItem = gameData[currentSelectedGame][index];
+        }
+
+        function closeModal(e) { if(!e || e.target.id === 'itemModal') document.getElementById('itemModal').style.display = "none"; }
+
+        async function finalOrder() {
             const user = auth.currentUser;
+            if(!user) return alert("Login အရင်ဝင်ပေးပါ!");
+            if(!currentSelectedItem) return alert("ပစ္စည်းရွေးပေးပါဦး!");
+            const gameId = document.getElementById('gamePlayerId').value;
+            if(!gameId) return alert("Player ID ရိုက်ထည့်ပါ!");
+
             const doc = await db.collection("users").doc(user.uid).get();
             const bal = doc.data().balance || 0;
-            if(bal >= it.p) {
-                let id = prompt(`${game} ID & Server ရိုက်ထည့်ပါ:`);
-                if(!id) return;
-                await db.collection("users").doc(user.uid).update({balance: bal - it.p});
-                await db.collection("orders").add({userId:user.uid, game:game, item:it.n, price:it.p, gameId:id, status:"Pending", timestamp:firebase.firestore.FieldValue.serverTimestamp()});
-                
-                // Telegram Notification
-                const msg = `🔔 <b>Order အသစ်!</b>\n\n👤 ဝယ်သူ: ${user.displayName}\n🎮 ဂိမ်း: ${game}\n💎 ပစ္စည်း: ${it.n}\n🆔 ID: ${id}\n💰 ဈေးနှုန်း: ${it.p} MMK\n🆔 User UID: ${user.uid}`;
-                fetch(`https://api.telegram.org/bot${botToken}/sendMessage?chat_id=${chatId}&text=${encodeURIComponent(msg)}&parse_mode=HTML`);
-                
-                alert("Order တင်ပြီးပါပြီ! Admin ဆီ Telegram ကနေ အကြောင်းကြားစာ ပို့လိုက်ပါပြီ။");
+
+            if(bal >= currentSelectedItem.p) {
+                if(confirm(`${currentSelectedItem.n} ကို ဝယ်ယူမှာ သေချာပါသလား?`)) {
+                    await db.collection("users").doc(user.uid).update({balance: bal - currentSelectedItem.p});
+                    await db.collection("orders").add({
+                        userId: user.uid, game: currentSelectedGame, item: currentSelectedItem.n, 
+                        price: currentSelectedItem.p, gameId: gameId, status: "Pending", 
+                        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                    
+                    const msg = `🔔 <b>Order အသစ်!</b>\n\n👤 ဝယ်သူ: ${user.displayName}\n🎮 ဂိမ်း: ${currentSelectedGame}\n💎 ပစ္စည်း: ${currentSelectedItem.n}\n🆔 Game ID: ${id}\n💰 ဈေးနှုန်း: ${currentSelectedItem.p} MMK\n🆔 User UID: ${user.uid}`;
+                    fetch(`https://api.telegram.org/bot${botToken}/sendMessage?chat_id=${chatId}&text=${encodeURIComponent(msg)}&parse_mode=HTML`);
+                    
+                    alert("ဝယ်ယူမှုအောင်မြင်ပါသည်။ Admin မှ မကြာမီ ထည့်ပေးပါလိမ့်မည်။");
+                    closeModal(null);
+                }
             } else alert("လက်ကျန်ငွေ မလုံလောက်ပါ။");
         }
 
         async function addBalance() {
             const uid = document.getElementById('targetUid').value;
             const amt = parseInt(document.getElementById('addAmount').value);
-            if(!uid || !amt) return alert("အချက်အလက်ပြည့်စုံအောင်ဖြည့်ပါ။");
+            if(!uid || !amt) return alert("အချက်အလက် ပြည့်စုံအောင်ဖြည့်ပါ။");
             await db.collection("users").doc(uid).update({balance: firebase.firestore.FieldValue.increment(amt)});
             alert("ငွေဖြည့်သွင်းမှု အောင်မြင်သည်။");
         }
@@ -179,4 +231,6 @@
         }
     </script>
 </body>
-</html>
+    </html>
+
+
